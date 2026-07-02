@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../dtos/naver_stock_dtos.dart';
 
@@ -88,46 +89,99 @@ class NaverDomesticStockClient implements NaverStockDataClient {
 
   @override
   Future<List<NaverAutocompleteItemDto>> searchStocks(String query) async {
-    // TODO(assignment): Implement the Naver autocomplete request.
-    //
-    // Goal:
-    // - Call https://ac.stock.naver.com/ac with Dio.
-    // - Send q=<query> and target=stock,ipo,index,marketindicator.
-    // - Use _defaultHeaders and ResponseType.plain because the response body
-    //   may arrive as a String instead of a decoded JSON map.
-    // - Decode the response with _decodeJsonObjectBody.
-    // - Read the "items" array and map each entry with
-    //   NaverAutocompleteItemDto.fromJson.
-    //
-    // Related tests:
-    // - test/features/watchlist/data/naver_stock_dtos_test.dart
-    // - test/features/watchlist/data/naver_watchlist_repository_test.dart
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverDomesticStockClient.searchStocks',
-    );
+    try {
+      final response = await _dio.get<Object?>(
+        'https://ac.stock.naver.com/ac',
+        queryParameters: {
+          'q': query,
+          'target': 'stock,ipo,index,marketindicator',
+        },
+        options: Options(
+          headers: _defaultHeaders,
+          responseType: ResponseType.plain,
+        ),
+      );
+
+      final body = _decodeJsonObjectBody(response.data, 'searchStocks');
+      final items = body['items'];
+      if (items is! List) {
+        throw FormatException('searchStocks response is missing "items"');
+      }
+
+      return items
+          .map(
+            (item) => NaverAutocompleteItemDto.fromJson(
+              _asStringKeyedMap(item, 'searchStocks.items'),
+            ),
+          )
+          .toList(growable: false);
+    } catch (error, stackTrace) {
+      debugPrint('searchStocks failed for "$query": $error\n$stackTrace');
+      rethrow;
+    }
   }
 
   @override
   Future<Map<String, NaverRealtimeQuoteDto>> fetchRealtimeQuotes(
     Iterable<String> symbols,
   ) async {
-    // TODO(assignment): Implement the Naver realtime quote request.
-    //
-    // Goal:
-    // - Deduplicate the incoming symbols.
-    // - Return an empty map when there is nothing to request.
-    // - Build query=SERVICE_ITEM:005930,000660 style payload.
-    // - Call https://polling.finance.naver.com/api/realtime.
-    // - Decode the JSON body, then traverse result -> areas -> datas.
-    // - Convert each realtime row with NaverRealtimeQuoteDto.fromJson.
-    // - Return a map keyed by the six-digit domestic symbol.
-    //
-    // Note:
-    // - The response body may be plain text JSON, so use ResponseType.plain.
-    // - Some tests use a fake client, but the real app depends on this method.
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverDomesticStockClient.fetchRealtimeQuotes',
-    );
+    final dedupedSymbols = symbols.toSet();
+    if (dedupedSymbols.isEmpty) {
+      return {};
+    }
+
+    try {
+      final query = dedupedSymbols
+          .map((symbol) => 'SERVICE_ITEM:$symbol')
+          .join(',');
+
+      final response = await _dio.get<Object?>(
+        'https://polling.finance.naver.com/api/realtime',
+        queryParameters: {'query': query},
+        options: Options(
+          headers: _defaultHeaders,
+          responseType: ResponseType.plain,
+        ),
+      );
+
+      final body = _decodeJsonObjectBody(response.data, 'fetchRealtimeQuotes');
+      final result = _asStringKeyedMap(
+        body['result'],
+        'fetchRealtimeQuotes.result',
+      );
+      final areas = result['areas'];
+      if (areas is! List) {
+        throw FormatException(
+          'fetchRealtimeQuotes response is missing "result.areas"',
+        );
+      }
+
+      final quotes = <String, NaverRealtimeQuoteDto>{};
+      for (final area in areas) {
+        final areaMap = _asStringKeyedMap(
+          area,
+          'fetchRealtimeQuotes.result.areas',
+        );
+        final datas = areaMap['datas'];
+        if (datas is! List) {
+          continue;
+        }
+
+        for (final data in datas) {
+          final quote = NaverRealtimeQuoteDto.fromJson(
+            _asStringKeyedMap(data, 'fetchRealtimeQuotes.result.areas.datas'),
+          );
+          quotes[quote.symbol] = quote;
+        }
+      }
+
+      return quotes;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'fetchRealtimeQuotes failed for "$dedupedSymbols": $error\n$stackTrace',
+      );
+      rethrow;
+    }
   }
 
   @override
