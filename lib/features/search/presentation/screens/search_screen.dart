@@ -23,6 +23,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   late final TextEditingController _textController;
   late final FocusNode _focusNode;
+  final Set<String> _pendingFavoriteToggles = {};
 
   @override
   void initState() {
@@ -45,14 +46,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Future<void> _handleHeartTap(StockSearchItem item) async {
-    final controller = ref.read(searchControllerProvider.notifier);
-    if (!item.isFavorite) {
-      controller.clearSelection();
-      FocusScope.of(context).unfocus();
+    // 같은 아이템에 대해 이미 처리 중이면 따닥(더블탭)을 무시한다.
+    // Set.add()는 이미 있던 원소면 false를 반환한다.
+    if (!_pendingFavoriteToggles.add(item.id)) {
+      return;
     }
 
-    await controller.toggleFavorite(item);
-    await ref.read(watchlistControllerProvider.notifier).refresh();
+    try {
+      final controller = ref.read(searchControllerProvider.notifier);
+      if (!item.isFavorite) {
+        controller.clearSelection();
+        FocusScope.of(context).unfocus();
+      }
+
+      await controller.toggleFavorite(item);
+      if (!mounted) {
+        return;
+      }
+      await ref.read(watchlistControllerProvider.notifier).refresh();
+    } finally {
+      _pendingFavoriteToggles.remove(item.id);
+    }
   }
 
   void _handlePlaceholderAction(String action, StockSearchItem item) {
@@ -170,7 +184,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: SearchToast(
                       key: const Key('search-toast'),
                       layout: layout,
-                      message: toast.message,
+                      leadingText: toast.leadingText,
+                      trailingText: toast.trailingText,
                     ),
                   ),
               ],

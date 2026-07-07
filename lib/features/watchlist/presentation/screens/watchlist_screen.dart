@@ -50,6 +50,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
   Future<void> _refresh() async {
     _clearAvailableDatesCache();
     await ref.read(watchlistControllerProvider.notifier).refresh();
+    if (!mounted) {
+      return;
+    }
     await _syncSelectedDetailWithSnapshot();
   }
 
@@ -126,20 +129,29 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
     if (formatApiDate(normalizedDate) == formatApiDate(snapshot.asOf)) {
       return;
     }
-
-    // TODO(assignment): Apply the selected trading day to the watchlist
+    // DONE(assignment): Apply the selected trading day to the watchlist
     // controller and refresh the selected detail so list/detail stay in sync.
+    await ref
+        .read(watchlistControllerProvider.notifier)
+        .setAsOf(normalizedDate);
+    if (!mounted) {
+      return;
+    }
+    await _syncSelectedDetailWithSnapshot();
   }
 
   Future<void> _handleActionTap(WatchlistItem item, String action) async {
     if (action == '삭제') {
       await ref.read(favoriteIdsControllerProvider.notifier).remove(item.id);
-      _clearAvailableDatesCache();
-      await ref.read(watchlistControllerProvider.notifier).refresh();
-      await _syncSelectedDetailWithSnapshot();
       if (!mounted) {
         return;
       }
+      _clearAvailableDatesCache();
+      await ref.read(watchlistControllerProvider.notifier).refresh();
+      if (!mounted) {
+        return;
+      }
+      await _syncSelectedDetailWithSnapshot();
       return;
     }
 

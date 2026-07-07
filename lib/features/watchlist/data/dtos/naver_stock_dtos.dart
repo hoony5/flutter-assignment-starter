@@ -1,7 +1,17 @@
 // ignore_for_file: unused_element
 
+import 'package:sample/features/watchlist/domain/models/watchlist_models.dart';
+
 import '../../domain/services/watchlist_sorting.dart';
 
+/// 검색어 자동 완성 DTO:
+/// - code : 종목코드
+/// - name : 종목명
+/// - typeCode : KOSPI, KOSDAQ 등
+/// - typeName : typeCode 한글명
+/// - url : 종목 상세 페이지 URL
+/// - nationCode : 국가 코드 (KOR 만 가져올 것)
+/// category : stock, index 등 (주식만 가져올 것)
 class NaverAutocompleteItemDto {
   const NaverAutocompleteItemDto({
     required this.code,
@@ -14,19 +24,18 @@ class NaverAutocompleteItemDto {
   });
 
   factory NaverAutocompleteItemDto.fromJson(Map<String, dynamic> json) {
-    // TODO(assignment): Read the autocomplete fields from json and create the
-    // DTO. See README.md for the expected Naver endpoint and sample payload.
-    //
-    // Required fields:
-    // - code
-    // - name
-    // - typeCode
-    // - typeName
-    // - url
-    // - nationCode
-    // - category
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverAutocompleteItemDto.fromJson',
+    const String conetxt = 'NaverAutocompleteItemDto';
+    return NaverAutocompleteItemDto(
+      code: _readString(json['code'], context: '$conetxt.code'),
+      name: _readString(json['name'], context: '$conetxt.name'),
+      typeCode: _readString(json['typeCode'], context: '$conetxt.typeCode'),
+      typeName: _readString(json['typeName'], context: '$conetxt.typeName'),
+      url: _readString(json['url'], context: '$conetxt.url'),
+      nationCode: _readString(
+        json['nationCode'],
+        context: '$conetxt.nationCode',
+      ),
+      category: _readString(json['category'], context: '$conetxt.category'),
     );
   }
 
@@ -43,8 +52,33 @@ class NaverAutocompleteItemDto {
       nationCode == 'KOR' &&
       RegExp(r'^\d{6}$').hasMatch(code) &&
       url.contains('/domestic/stock/');
+
+  // todo : isFavorite, logoUrl 등은 외부에서 처리한걸 가져올수있는지 확인
+  StockSearchItem toStockSearchItem({
+    bool isFavorite = false,
+    String? logoUrl,
+  }) {
+    return StockSearchItem(
+      id: 'domestic:$code',
+      market: MarketType.domestic,
+      marketLabel: typeName,
+      symbol: code,
+      name: name,
+      isFavorite: isFavorite,
+      logoUrl: logoUrl,
+    );
+  }
 }
 
+/// 실시간 시세 DTO:
+/// - cd : 종목코드 (symbol)
+/// - nv : 현재가
+/// - pcv : 전일대비 종가
+/// - ov : 시가
+/// - hv : 고가
+/// - lv : 저가
+/// - aq : 누적거래량
+/// - countOfListedStock : 상장주식수
 class NaverRealtimeQuoteDto {
   const NaverRealtimeQuoteDto({
     required this.symbol,
@@ -58,19 +92,25 @@ class NaverRealtimeQuoteDto {
   });
 
   factory NaverRealtimeQuoteDto.fromJson(Map<String, dynamic> json) {
-    // TODO(assignment): Map the realtime quote payload into this DTO.
-    //
-    // Naver keys used by the solution:
-    // - cd: symbol
-    // - nv: current price
-    // - pcv: previous close
-    // - ov: open price
-    // - hv: high price
-    // - lv: low price
-    // - aq: accumulated trading volume
-    // - countOfListedStock: listed share count (optional)
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverRealtimeQuoteDto.fromJson',
+    const String context = 'NaverRealtimeQuoteDto';
+    return NaverRealtimeQuoteDto(
+      symbol: _readString(json['cd'], context: '$context.symbol'),
+      currentPrice: _readDouble(json['nv'], context: '$context.currentPrice'),
+      previousClose: _readDouble(
+        json['pcv'],
+        context: '$context.previousClose',
+      ),
+      openPrice: _readDouble(json['ov'], context: '$context.openPrice'),
+      highPrice: _readDouble(json['hv'], context: '$context.highPrice'),
+      lowPrice: _readDouble(json['lv'], context: '$context.lowPrice'),
+      accumulatedTradingVolume: _readInt(
+        json['aq'],
+        context: '$context.accumulatedTradingVolume',
+      ),
+      countOfListedStock: _readInt(
+        json['countOfListedStock'],
+        context: '$context.countOfListedStock',
+      ),
     );
   }
 
@@ -105,9 +145,14 @@ class NaverChartMetadataDto {
   });
 
   factory NaverChartMetadataDto.fromJson(Map<String, dynamic> json) {
-    // TODO(assignment): Map the chart metadata payload into this DTO.
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverChartMetadataDto.fromJson',
+    const String context = 'NaverChartMetadataDto';
+    return NaverChartMetadataDto(
+      symbol: _readString(json['itemCode'], context: '$context.itemCode'),
+      stockName: _readString(json['stockName'], context: '$context.stockName'),
+      stockExchangeNameKor: _readString(
+        json['stockExchangeNameKor'],
+        context: '$context.stockExchangeNameKor',
+      ),
     );
   }
 
@@ -127,9 +172,23 @@ class NaverHistoricalPriceDto {
   });
 
   factory NaverHistoricalPriceDto.fromJson(Map<String, dynamic> json) {
-    // TODO(assignment): Parse one historical OHLCV row.
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverHistoricalPriceDto.fromJson',
+    const String context = 'NaverHistoricalPriceDto';
+    return NaverHistoricalPriceDto(
+      localDate: _readLocalDate(
+        json['localDate'],
+        context: '$context.localDate',
+      ),
+      closePrice: _readDouble(
+        json['closePrice'],
+        context: '$context.closePrice',
+      ),
+      openPrice: _readDouble(json['openPrice'], context: '$context.openPrice'),
+      highPrice: _readDouble(json['highPrice'], context: '$context.highPrice'),
+      lowPrice: _readDouble(json['lowPrice'], context: '$context.lowPrice'),
+      accumulatedTradingVolume: _readInt(
+        json['accumulatedTradingVolume'],
+        context: '$context.accumulatedTradingVolume',
+      ),
     );
   }
 
@@ -149,10 +208,18 @@ class NaverHistoricalChartDto {
   });
 
   factory NaverHistoricalChartDto.fromJson(Map<String, dynamic> json) {
-    // TODO(assignment): Parse the chart wrapper and convert each priceInfos
-    // entry with NaverHistoricalPriceDto.fromJson.
-    throw UnimplementedError(
-      'TODO(assignment): implement NaverHistoricalChartDto.fromJson',
+    const String context = 'NaverHistoricalChartDto';
+    return NaverHistoricalChartDto(
+      symbol: _readString(json['code'], context: '$context.code'),
+      periodType: _readString(
+        json['periodType'],
+        context: '$context.periodType',
+      ),
+      priceInfos: (json['priceInfos'] as List<dynamic>)
+          .map(
+            (p) => NaverHistoricalPriceDto.fromJson(p as Map<String, dynamic>),
+          )
+          .toList(growable: false),
     );
   }
 
@@ -175,10 +242,13 @@ class NaverDailyHistoryPageDto {
   final List<NaverHistoricalPriceDto> priceInfos;
 }
 
-DateTime _readLocalDate(Object? value) {
-  final text = _readString(value);
+// 이하 핼퍼함수들에 context를 추가했습니다.
+// 즉시 문제 위치를 파악할 수 있도록, JSON Object의 key를 명시적으로 표시했습니다.
+
+DateTime _readLocalDate(Object? value, {String context = 'JSON Object'}) {
+  final text = _readString(value, context: context);
   if (text.length != 8) {
-    throw FormatException('Invalid Naver localDate "$text"');
+    throw FormatException('[$context] Invalid Naver localDate "$text"');
   }
 
   return normalizeAsOfDate(
@@ -190,34 +260,34 @@ DateTime _readLocalDate(Object? value) {
   );
 }
 
-String _readString(Object? value) {
+String _readString(Object? value, {String context = 'JSON Object'}) {
   final text = value?.toString().trim();
   if (text == null || text.isEmpty) {
-    throw FormatException('Missing string value for "$value"');
+    throw FormatException('[$context] Missing string value for "$value"');
   }
   return text;
 }
 
-double _readDouble(Object? value) {
+double _readDouble(Object? value, {String context = 'JSON Object'}) {
   if (value is num) {
     return value.toDouble();
   }
-  return double.parse(_readString(value).replaceAll(',', ''));
+  return double.parse(_readString(value, context: context).replaceAll(',', ''));
 }
 
-int _readInt(Object? value) {
+int _readInt(Object? value, {String context = 'JSON Object'}) {
   if (value is int) {
     return value;
   }
   if (value is num) {
     return value.round();
   }
-  return int.parse(_readString(value).replaceAll(',', ''));
+  return int.parse(_readString(value, context: context).replaceAll(',', ''));
 }
 
-int? _readNullableInt(Object? value) {
+int? _readNullableInt(Object? value, {String context = 'JSON Object'}) {
   if (value == null) {
     return null;
   }
-  return _readInt(value);
+  return _readInt(value, context: context);
 }

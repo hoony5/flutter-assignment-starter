@@ -199,18 +199,13 @@ class _WatchlistDateBottomSheetState extends State<WatchlistDateBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO(assignment): Rebuild the date bottom sheet body to match Figma.
-    // Suggested scope:
-    // - header
-    // - year / month / day picker area
-    // - selected state styling
-    // - cancel / confirm CTA row
     return SafeArea(
       top: false,
       child: Align(
         alignment: Alignment.bottomCenter,
         child: Container(
           key: const Key('watchlist-date-sheet'),
+          width: double.infinity,
           decoration: BoxDecoration(
             color: AppColors.bg.bg_2_212121,
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -221,7 +216,7 @@ class _WatchlistDateBottomSheetState extends State<WatchlistDateBottomSheet> {
               SizedBox(
                 height: 56,
                 child: Padding(
-                  padding: EdgeInsets.only(left: 24),
+                  padding: EdgeInsets.only(left: 24, top: 24, bottom: 10),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text('날짜 선택', style: AppTypography.sheetTitle),
@@ -230,13 +225,47 @@ class _WatchlistDateBottomSheetState extends State<WatchlistDateBottomSheet> {
               ),
               SizedBox(
                 height: _pickerHeight,
-                child: Center(
-                  child: Text(
-                    'TODO(assignment): WatchlistDateBottomSheet body를 재구성하세요.',
-                    key: const Key('watchlist-date-placeholder'),
-                    style: AppTypography.searchMeta,
-                    textAlign: TextAlign.center,
-                  ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DateWheelPicker(
+                            pickerKey: const Key('watchlist-date-picker-year'),
+                            itemKeyPrefix: 'watchlist-date-item-year',
+                            controller: _yearController,
+                            values: _years,
+                            selectedValue: _selectedYear,
+                            formatter: (value) => '$value년',
+                            onSelectedItemChanged: _selectYear,
+                          ),
+                        ),
+                        Expanded(
+                          child: _DateWheelPicker(
+                            pickerKey: const Key('watchlist-date-picker-month'),
+                            itemKeyPrefix: 'watchlist-date-item-month',
+                            controller: _monthController,
+                            values: _months,
+                            selectedValue: _selectedMonth,
+                            formatter: (value) => '$value월',
+                            onSelectedItemChanged: _selectMonth,
+                          ),
+                        ),
+                        Expanded(
+                          child: _DateWheelPicker(
+                            pickerKey: const Key('watchlist-date-picker-day'),
+                            itemKeyPrefix: 'watchlist-date-item-day',
+                            controller: _dayController,
+                            values: _days,
+                            selectedValue: _selectedDay,
+                            formatter: (value) => '$value일',
+                            onSelectedItemChanged: _selectDay,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),
@@ -249,14 +278,14 @@ class _WatchlistDateBottomSheetState extends State<WatchlistDateBottomSheet> {
                         buttonKey: const Key('watchlist-date-cancel'),
                         label: '취소',
                         backgroundColor: AppColors.bg.bg_4_333333,
-                        onTap: () => Navigator.of(context).pop(),
+                        onTap: _dismiss,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: _SheetButton(
                         buttonKey: const Key('watchlist-date-confirm'),
-                        label: '매수',
+                        label: '확인',
                         backgroundColor: AppColors.mainAndAccent.primary_ff8a00,
                         onTap: _confirm,
                       ),
