@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "decision_gateway": {
+    "source": "hoony5/decision-gateway",
+    "visibility": "private",
+    "profile": "current",
+    "bridge": "agent-skills/skills/decision-gateway/scripts/decision_gateway_cli.py",
+    "preset": "coding_change",
+    "axes": [
+      "safety",
+      "blast_radius",
+      "implementation",
+      "validation"
+    ],
+    "approval": "adaptive",
+    "provider_packet_language": "english"
+  }
+}
