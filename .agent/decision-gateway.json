@@ -13,6 +13,11 @@
       "validation"
     ],
     "approval": "adaptive",
-    "provider_packet_language": "english"
+    "provider_packet_language": "english",
+    "local_source": "/Users/minaaa/Desktop/git/decision-gateway",
+    "update_mode": "central_pull_only",
+    "repo_copy": "none",
+    "auto_propagation": "immediate_after_central_pull",
+    "contract": "/Users/minaaa/Desktop/git/decision-gateway/AGENT_CONTRACT.md"
   }
 }
